@@ -30,7 +30,7 @@ def image_recognizer(filepath: str):
 
     vision_base_url = "https://eastus.api.cognitive.microsoft.com/vision/v2.0/"
     analyze_url = vision_base_url + "analyze"
-    image_url = "https://arbordayblog.org/wp-content/uploads/2018/06/oak-tree-sunset-iStock-477164218-1080x608.jpg"
+    image_url = "https://cdn2.autoexpress.co.uk/sites/autoexpressuk/files/styles/article_main_image/public/2018/10/cover.jpg?itok=NJJbOakJ"
     headers = {'Ocp-Apim-Subscription-Key': azure_key}
     params = {'visualFeatures': 'Categories,Description,Objects'}
     data = {'url': image_url}
@@ -78,10 +78,13 @@ def dream(input_path: str, output_path:str):
     The main function, put in an image, and it outputs a sketch
     """
     azure_dict = image_recognizer(output_path)
-    object_list = []
+    erase_image()
     for obj in azure_dict["objects"]:
-        if bad_sketch(obj["object"]) is not None:
-            img = Image.open('keyword.gif', 'r')
+        noun = obj["object"]
+        xcor = obj["rectangle"]["x"]
+        ycor = obj["rectangle"]["y"]
+        if bad_sketch(noun) is not None:
+            add_to_drawing(noun, xcor, ycor)
 
 
 
@@ -97,16 +100,28 @@ def add_to_drawing(word: str, xcor, ycor):
     bad_sketch(word)
     img = Image.open('keyword.gif', 'r')
     img_w, img_h = img.size
-    background = Image.new('RGBA', (2000, 2000), (255, 255, 255, 255))
-    # background = Image.open("image.png", "r")
+    #background = Image.new('RGBA', (2000, 2000), (255, 255, 255, 255))
+    background = Image.open("image.png", "r")
     bg_w, bg_h = background.size
     #offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
     background.paste(img, (xcor, ycor))
     background.save('image.png', "PNG")
 
+def erase_image():
+    background = Image.new('RGBA', (2000, 2000), (255, 255, 255, 255))
+    background.save('image.png', "PNG")
+
+
 
 if __name__ == '__main__':
-    # image_recognizer("bob")
+    #image_recognizer("bob")
     # print(thesaurize("building"))
     # bad_sketch("car")
-    add_to_drawing("star", 0, 500)
+    #add_to_drawing("star", 0, 500)
+    dream("blah", "blah")
+
+"""
+[{'name': 'plant_tree', 'score': 0.984375}]
+[{'rectangle': {'x': 161, 'y': 88, 'w': 680, 'h': 458}, 'object': 'tree', 'confidence': 0.837, 'parent': {'object': 'plant', 'confidence': 0.876}}]
+{'tags': ['grass', 'outdoor', 'water', 'field', 'green', 'cow', 'tree', 'herd', 'grassy', 'lake', 'grazing', 'body', 'large', 'bench', 'front', 'lush', 'cattle', 'riding', 'view', 'sheep', 'river', 'standing', 'mountain', 'street', 'walking', 'motorcycle', 'man', 'boat', 'sunset', 'sign', 'red', 'bird', 'hill', 'ocean', 'parked', 'flying', 'elephant', 'horse', 'blue', 'white'], 'captions': [{'text': 'a large green field with trees in the background', 'confidence': 0.9170250836752474}]}
+"""
