@@ -48,6 +48,9 @@ def image_recognizer(filepath: str):
     print(analysis["description"])
     return output_dict
 
+def speech_recognizer():
+    pass
+
 
 def bad_sketch(keyword: str):
     """
@@ -99,9 +102,6 @@ def dream(input_path: str, output_path:str):
                 parent = obj["parent"]["object"]
                 if bad_sketch(parent) is not None:
                     add_to_drawing(parent, (xcor, ycor))
-
-
-
 
 
 def speak_your_dream(output_path: str):
@@ -157,6 +157,27 @@ def grid_draw(x, y, word):
     add_to_drawing(word, pixel_coor)
 
 
+def grid_fill(row: bool, coordinate: int, word: str):
+    """
+    Fill a row or column with the given word
+    """
+
+    if row:
+        num = 0
+        while num <= 10:
+            pixel_coor = grid_to_pixel(num, coordinate)
+            add_to_drawing(word, pixel_coor)
+            num += 1
+    else:
+        num = 8
+        while num > 0:
+            pixel_coor = grid_to_pixel(coordinate, num)
+            add_to_drawing(word, pixel_coor)
+            num -= 1
+
+
+
+
 
 
 
@@ -165,7 +186,7 @@ if __name__ == '__main__':
     #print(thesaurize("plant"))
     #bad_sketch("smiley face")
     #add_to_drawing("star", (0, 500))
-    dream("blah", "blah")
+    #dream("blah", "blah")
     # num = 100
     # while num <= 2100:
     #     shift_to_drawing("tree", num, 900)
@@ -175,6 +196,7 @@ if __name__ == '__main__':
     # while num < 10:
     #     grid_draw(num, 2, "skull")
     #     num += 1
+    grid_fill(False, 4, "mountain")
 
 
 """
