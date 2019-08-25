@@ -11,6 +11,7 @@ from PIL import Image
 import azure.cognitiveservices.speech as speechsdk
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QLabel, QApplication
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QTimer
 import sys
 
 
@@ -24,6 +25,7 @@ class App(QWidget):
         self.width = 60
         self.height = 80
         self.text = "https://ichef.bbci.co.uk/news/660/cpsprodpb/E9DF/production/_96317895_gettyimages-164067218.jpg"
+        self.voice_save = ""
         self.initUI()
 
 
@@ -54,13 +56,18 @@ class App(QWidget):
         button3.move(1600, 400)
         button3.clicked.connect(self.refresh)
 
+        button4 = QPushButton('Redo Command', self)
+        button4.move(1600, 850)
+        button4.clicked.connect(self.redo_voice)
+
         self.label.setScaledContents(True)
         self.show()
 
     def on_click(self):
-        speech_to_doodle("blah")
+        self.voice_save = speech_to_doodle("")
         pixmap = QPixmap('image.png')
         self.label.setPixmap(pixmap)
+
 
     def on_click2(self):
         textboxValue = self.textbox.text()
@@ -72,6 +79,11 @@ class App(QWidget):
 
     def refresh(self):
         pic_to_doodle(self.text)
+        pixmap = QPixmap('image.png')
+        self.label.setPixmap(pixmap)
+
+    def redo_voice(self):
+        speech_to_doodle(self.voice_save)
         pixmap = QPixmap('image.png')
         self.label.setPixmap(pixmap)
 
@@ -189,7 +201,7 @@ def bad_sketch(keyword: str):
         key.image.save(filepath)
         return filepath
     except ValueError:
-        return None
+        return "blank.png"
 
 
 def bad_sketch_related(keyword: str):
@@ -206,24 +218,25 @@ def pic_to_doodle(input_path: str):
     """
     The main function, put in an image, and it outputs a sketch
     """
-    azure_dict = image_recognizer(input_path)
-    erase_image("image.png")
-    for obj in azure_dict["objects"]:
-        print("ab")
-        noun = obj["object"]
+    if input_path != "":
+        azure_dict = image_recognizer(input_path)
+        erase_image("image.png")
+        for obj in azure_dict["objects"]:
+            print("ab")
+            noun = obj["object"]
 
-        xcor = obj["rectangle"]["x"] + 750
-        ycor = obj["rectangle"]["y"] + 850
-        if bad_sketch(noun) is not None:
-            print("ba")
-            add_to_drawing(noun, (xcor, ycor))
-            if noun == "person":
-                add_to_drawing("t-shirt", (xcor, ycor + 200))
-        else:
-            if "parent" in obj:
-                parent = obj["parent"]["object"]
-                if bad_sketch(parent) is not None:
-                    add_to_drawing(parent, (xcor, ycor))
+            xcor = obj["rectangle"]["x"] + 750
+            ycor = obj["rectangle"]["y"] + 850
+            if bad_sketch(noun) is not None:
+                print("ba")
+                add_to_drawing(noun, (xcor, ycor))
+                if noun == "person":
+                    add_to_drawing("t-shirt", (xcor, ycor + 200))
+            else:
+                if "parent" in obj:
+                    parent = obj["parent"]["object"]
+                    if bad_sketch(parent) is not None:
+                        add_to_drawing(parent, (xcor, ycor))
 
 def speech_to_info(speech):
     """
@@ -231,14 +244,15 @@ def speech_to_info(speech):
     """
     pass
 
-def speech_to_doodle(event):
+def speech_to_doodle(to_draw = ""):
     """
     Speak to draw, using Azure voice recognition
     You can use voice commands to erase the image,
     place an image onto a part of the grid,
      or fill a row or column with something
     """
-    to_draw = speech_recognize()
+    if to_draw == "":
+        to_draw = speech_recognize()
     if to_draw is not None:
         #print("bro")
         noun = to_draw[0].lower()
@@ -254,7 +268,7 @@ def speech_to_doodle(event):
             grid_fill(False, xcor, noun)
         else:
             grid_draw(xcor, ycor, noun)
-
+        return to_draw
     else:
         print("Sorry! Couldn't catch that.")
 
@@ -273,6 +287,8 @@ def speech_correction(noun):
         return "ear"
     elif noun == "frying":
         return "frying pan"
+    elif noun == "free":
+        return "tree"
     else:
         return noun
 
@@ -282,8 +298,8 @@ def add_to_drawing(word: str, xytuple):
     """
     # img = Image.new('RGB', (800, 1280), (255, 255, 255))
     # img.save("image.png", "PNG")
-    bad_sketch(word)
-    img = Image.open('keyword.gif', 'r')
+    filepath = bad_sketch(word)
+    img = Image.open(filepath, 'r')
     img_w, img_h = img.size
     #background = Image.new('RGBA', (2600, 2000), (255, 255, 255, 255))
     background = Image.open("image.png", "r")
@@ -363,10 +379,12 @@ if __name__ == '__main__':
     #     grid_draw(num, 2, "skull")
     #     num += 1
     #grid_fill(False, 4, "mountain")
-    #speak_your_dream("blach")
+    #speech_to_doodle("blach")
     app = QApplication(sys.argv)
     ex = App()
     sys.exit(app.exec_())
+ # img = Image.new('RGB', (50, 50), (255, 255, 255))
+ # img.save("blank.png", "PNG")
 
 """
 [{'name': 'plant_tree', 'score': 0.984375}]
