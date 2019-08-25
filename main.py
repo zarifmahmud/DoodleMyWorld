@@ -8,6 +8,8 @@ from security import *
 import requests
 from quickdraw import QuickDrawData
 from PIL import Image
+import azure.cognitiveservices.speech as speechsdk
+
 
 import json
 
@@ -48,8 +50,64 @@ def image_recognizer(filepath: str):
     print(analysis["description"])
     return output_dict
 
-def speech_recognizer():
-    pass
+def speech_recognize():
+    """
+    Keywords:
+    - Erase, to erase the drawing
+    - "Noun" on x dot y, to place a noun at that coordinate
+    - Noun across/down point x/y, to fill a row or column
+    """
+    speech_key, service_region = azure_speech_key, "eastus"
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
+
+    # Creates a recognizer with the given settings
+    speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config)
+
+    print("Say something...")
+    result = speech_recognizer.recognize_once()
+
+    # Checks result.
+    if result.reason == speechsdk.ResultReason.RecognizedSpeech:
+        print("Recognized: {}".format(result.text))
+        said = result.text
+        if said[:-1] == "Erase":
+            return ["Erase", (-1, -1)]
+
+        # Get in form of number dot number
+        potential = (said[-4], said[-2])
+        said = said.strip()
+        noun = said.split()[0]
+        print(said)
+        print(result.text[-2])
+        if result.text[-2].isdigit():
+            digit = int(result.text[-2])
+            print(digit + 2)
+            if "row" in said or "road" in said or "across" in said:
+                return [noun, (0, digit), 1]
+            elif "column" in said or "down" in said:
+                return [noun, (digit, 0), 2]
+
+        if potential[0].isdigit() and potential[1].isdigit():
+            coordinate = (int(potential[0]), int(potential[1]))
+            output = [noun, coordinate, 0]
+            print(coordinate)
+            # Check if filling row or column
+            # if "row" in said or "road" in said or "across" in said:
+            #     output[1] = result.text[:-2]
+            #     output[2] = 1
+            # elif "column" in said or "down" in said:
+            #     output[1] = result.text[:-2]
+            #     output[2] = 2
+            return output
+        else:
+            return None
+    elif result.reason == speechsdk.ResultReason.NoMatch:
+        print("No speech could be recognized: {}".format(result.no_match_details))
+    elif result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = result.cancellation_details
+        print("Speech Recognition canceled: {}".format(cancellation_details.reason))
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            print("Error details: {}".format(cancellation_details.error_details))
 
 
 def bad_sketch(keyword: str):
@@ -60,7 +118,8 @@ def bad_sketch(keyword: str):
     if keyword == "person":
         keyword = "smiley face"
     qd = QuickDrawData()
-    keyword = keyword.lower()
+    if keyword is not None:
+        keyword = keyword.lower()
     try:
         key = qd.get_drawing(keyword)
         filepath = "keyword.gif"
@@ -103,11 +162,56 @@ def dream(input_path: str, output_path:str):
                 if bad_sketch(parent) is not None:
                     add_to_drawing(parent, (xcor, ycor))
 
+def speech_to_info(speech):
+    """
+    Parses speech for keywords to convert
+    """
+    pass
 
 def speak_your_dream(output_path: str):
     """
     Speak to draw, using Azure voice recognition
+    You can use voice commands to erase the image,
+    place an image onto a part of the grid,
+     or fill a row or column with something
     """
+    to_draw = speech_recognize()
+    if to_draw is not None:
+        #print("bro")
+        noun = to_draw[0].lower()
+        noun = speech_correction(noun)
+        xcor = to_draw[1][0]
+        ycor = to_draw[1][1]
+        fill = to_draw[2]
+        if noun == "erase":
+            erase_image("image.png")
+        elif fill == 1:
+            grid_fill(True, ycor, noun)
+        elif fill == 2:
+            grid_fill(False, xcor, noun)
+        else:
+            grid_draw(xcor, ycor, noun)
+
+    else:
+        print("Sorry! Couldn't catch that.")
+
+
+def speech_correction(noun):
+    """
+    Corrects common misheard words
+    """
+    if noun == "son":
+        return "sun"
+    elif noun == "shirt":
+        return "t-shirt"
+    elif noun == "smiley":
+        return "smiley face"
+    elif noun == "year":
+        return "ear"
+    elif noun == "frying":
+        return "frying pan"
+    else:
+        return noun
 
 def add_to_drawing(word: str, xytuple):
     """
@@ -157,7 +261,7 @@ def grid_draw(x, y, word):
     add_to_drawing(word, pixel_coor)
 
 
-def grid_fill(row: bool, coordinate: int, word: str):
+def grid_fill(row: bool, coordinate, word: str):
     """
     Fill a row or column with the given word
     """
@@ -196,7 +300,8 @@ if __name__ == '__main__':
     # while num < 10:
     #     grid_draw(num, 2, "skull")
     #     num += 1
-    grid_fill(False, 4, "mountain")
+    #grid_fill(False, 4, "mountain")
+    speak_your_dream("blach")
 
 
 """
