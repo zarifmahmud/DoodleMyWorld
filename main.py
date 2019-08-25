@@ -9,9 +9,72 @@ import requests
 from quickdraw import QuickDrawData
 from PIL import Image
 import azure.cognitiveservices.speech as speechsdk
+from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QLabel, QApplication
+from PyQt5.QtGui import QPixmap
+import sys
 
 
-import json
+class App(QWidget):
+
+    def __init__(self):
+        super().__init__()
+        self.title = 'Title'
+        self.left = 10
+        self.top = 10
+        self.width = 60
+        self.height = 80
+        self.text = "https://ichef.bbci.co.uk/news/660/cpsprodpb/E9DF/production/_96317895_gettyimages-164067218.jpg"
+        self.initUI()
+
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+
+        # Create widget
+        self.label = QLabel(self)
+        pixmap = QPixmap('image.png')
+        self.label.setPixmap(pixmap)
+        self.label.resize(1500, 1000)
+        self.resize(pixmap.width(), pixmap.height())
+        button = QPushButton('Voice Command', self)
+        button.setToolTip('This is an example button')
+        button.move(1600, 800)
+        button.clicked.connect(self.on_click)
+        self.textbox = QLineEdit(self)
+        self.textbox.move(1600, 300)
+        self.textbox.resize(280, 40)
+
+        # Create a button in the window
+        button2 = QPushButton('Upload image from link', self)
+        button2.move(1600, 350)
+        button2.clicked.connect(self.on_click2)
+
+        button3 = QPushButton('Refresh Image!', self)
+        button3.move(1600, 400)
+        button3.clicked.connect(self.refresh)
+
+        self.label.setScaledContents(True)
+        self.show()
+
+    def on_click(self):
+        speech_to_doodle("blah")
+        pixmap = QPixmap('image.png')
+        self.label.setPixmap(pixmap)
+
+    def on_click2(self):
+        textboxValue = self.textbox.text()
+        self.text = textboxValue
+        self.textbox.setText("")
+        pic_to_doodle(textboxValue)
+        pixmap = QPixmap('image.png')
+        self.label.setPixmap(pixmap)
+
+    def refresh(self):
+        pic_to_doodle(self.text)
+        pixmap = QPixmap('image.png')
+        self.label.setPixmap(pixmap)
+
 
 
 def thesaurize(word: str):
@@ -33,7 +96,7 @@ def image_recognizer(filepath: str):
 
     vision_base_url = "https://eastus.api.cognitive.microsoft.com/vision/v2.0/"
     analyze_url = vision_base_url + "analyze"
-    image_url = "https://previews.123rf.com/images/stockbroker/stockbroker1111/stockbroker111100001/11183288-business-meeting-in-an-office.jpg"
+    image_url = filepath
     headers = {'Ocp-Apim-Subscription-Key': azure_key}
     params = {'visualFeatures': 'Categories,Description,Objects'}
     data = {'url': image_url}
@@ -71,7 +134,7 @@ def speech_recognize():
         print("Recognized: {}".format(result.text))
         said = result.text
         if said[:-1] == "Erase":
-            return ["Erase", (-1, -1)]
+            return ["Erase", (-1, -1), 0]
 
         # Get in form of number dot number
         potential = (said[-4], said[-2])
@@ -139,18 +202,18 @@ def bad_sketch_related(keyword: str):
     pass
 
 
-def dream(input_path: str, output_path:str):
+def pic_to_doodle(input_path: str):
     """
     The main function, put in an image, and it outputs a sketch
     """
-    azure_dict = image_recognizer(output_path)
+    azure_dict = image_recognizer(input_path)
     erase_image("image.png")
     for obj in azure_dict["objects"]:
         print("ab")
         noun = obj["object"]
 
-        xcor = obj["rectangle"]["x"]
-        ycor = obj["rectangle"]["y"]
+        xcor = obj["rectangle"]["x"] + 750
+        ycor = obj["rectangle"]["y"] + 850
         if bad_sketch(noun) is not None:
             print("ba")
             add_to_drawing(noun, (xcor, ycor))
@@ -168,7 +231,7 @@ def speech_to_info(speech):
     """
     pass
 
-def speak_your_dream(output_path: str):
+def speech_to_doodle(event):
     """
     Speak to draw, using Azure voice recognition
     You can use voice commands to erase the image,
@@ -233,19 +296,20 @@ def erase_image(image_name):
     background = Image.new('RGBA', (2000, 2000), (255, 255, 255, 255))
     background.save(image_name, "PNG")
 
-def shift_to_drawing(word: str, xcor, ycor):
-    # img = Image.new('RGB', (800, 1280), (255, 255, 255))
-    # img.save("image.png", "PNG")
-    #erase_image("gridcheck.png")
-    bad_sketch(word)
-    img = Image.open('keyword.gif', 'r')
-    img_w, img_h = img.size
-    #background = Image.new('RGBA', (2200, 2000), (255, 255, 255, 255))
-    background = Image.open("gridcheck.png", "r")
-    bg_w, bg_h = background.size
-    #offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
-    background.paste(img, (xcor, ycor))
-    background.save('gridcheck.png', "PNG")
+# def shift_to_drawing(word: str, xcor, ycor):
+#     # img = Image.new('RGB', (800, 1280), (255, 255, 255))
+#     # img.save("image.png", "PNG")
+#     #erase_image("gridcheck.png")
+#     bad_sketch(word)
+#     img = Image.open('keyword.gif', 'r')
+#     img_w, img_h = img.size
+#     #background = Image.new('RGBA', (2200, 2000), (255, 255, 255, 255))
+#     background = Image.open("gridcheck.png", "r")
+#     bg_w, bg_h = background.size
+#     #offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
+#     background.paste(img, (xcor, ycor))
+#     background.save('gridcheck.png', "PNG")
+
 
 def grid_to_pixel(x, y):
     """
@@ -255,7 +319,11 @@ def grid_to_pixel(x, y):
     vert = y * 300 + 100
     return (horiz, vert)
 
+
 def grid_draw(x, y, word):
+    """
+    Takes in Cartesian coordinates, and plots onto image
+    """
     pixel_coor = grid_to_pixel(x, y)
     print(pixel_coor[0])
     add_to_drawing(word, pixel_coor)
@@ -279,12 +347,6 @@ def grid_fill(row: bool, coordinate, word: str):
             add_to_drawing(word, pixel_coor)
             num -= 1
 
-
-
-
-
-
-
 if __name__ == '__main__':
     #image_recognizer("bob")
     #print(thesaurize("plant"))
@@ -301,8 +363,10 @@ if __name__ == '__main__':
     #     grid_draw(num, 2, "skull")
     #     num += 1
     #grid_fill(False, 4, "mountain")
-    speak_your_dream("blach")
-
+    #speak_your_dream("blach")
+    app = QApplication(sys.argv)
+    ex = App()
+    sys.exit(app.exec_())
 
 """
 [{'name': 'plant_tree', 'score': 0.984375}]
