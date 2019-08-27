@@ -2,16 +2,14 @@
 Functions to recognize and process voice commands
 """
 
+import security
 import azure.cognitiveservices.speech as speechsdk
-from draw import *
+from draw import grid_fill, grid_draw, erase_image
 
 
-def speech_recognize():
+def speech_recognize() -> str:
     """
-    Keywords:
-    - Erase, to erase the drawing
-    - "Noun" on x dot y, to place a noun at that coordinate. i.e. "Tree at 3.4."
-    - Noun across/down point x/y, to fill a row or column i.e. "Mountain across .5."
+    Using Microsoft Azure to convert your speech into text. It will process after you finish speaking.
     """
     speech_key, service_region = security.azure_speech_key, "eastus"
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
@@ -70,10 +68,16 @@ def keyword_finder(speech: str) -> list:
 
 def speech_to_doodle(to_draw=""):
     """
-    Speak to draw, using Azure voice recognition
-    You can use voice commands to erase the image,
-    place an image onto a part of the grid,
-     or fill a row or column with something
+    Speak to draw, using Azure voice recognition You can use voice commands to erase the image,
+    place an image onto a part of the grid, or fill a row or column with something.
+
+    Keywords:
+    - Erase, to erase the drawing
+    - NOUN on X dot Y, to place a noun at that coordinate. i.e. "Crocodile at 3.4."
+    - NOUN across/down point X/Y, to fill a row or column i.e. "Skyscraper across .5."
+
+    (You can use dot or point interchangeably. You actually often don't need either, but it helps
+    Azure detect that you're saying a number like 1, rather than a homonym like "won".)
     """
     if to_draw == "":
         to_draw = keyword_finder(speech_recognize())
@@ -97,9 +101,9 @@ def speech_to_doodle(to_draw=""):
         print("Sorry! Couldn't catch that.")
 
 
-def speech_correction(noun):
+def speech_correction(noun: str) -> str:
     """
-    Corrects common misheard words. If you have any, add it to the dictionary!
+    Corrects common misheard words, and creates shortcut phrases. If you have any, add it to the dictionary!
     """
     misheard_dict = {"son": "sun", "shirt": "t-shirt", "smiley": "smiley face", "year": "ear",
                      "frying": "frying pan", "free": "tree", "suck": "sock", "nodes": "nose"}

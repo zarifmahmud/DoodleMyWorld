@@ -1,14 +1,15 @@
 """
 Functions to doodle-fy photos
 """
-from draw import *
+from draw import bad_sketch, add_to_drawing, erase_image
 import requests
 import security
 
 
-def image_recognizer(image_url: str):
+def image_recognizer(image_url: str) -> dict:
     """
-    Takes in an image from a url and outputs objects detected by Microsoft Azure
+    Takes in an image from a url and outputs dictionary of objects and info about the image detected
+     by Microsoft Azure.
     """
 
     vision_base_url = "https://eastus.api.cognitive.microsoft.com/vision/v2.0/"
@@ -35,7 +36,15 @@ def image_recognizer(image_url: str):
 
 def pic_to_doodle(input_path: str):
     """
-    The main function, put in an image, and it outputs a sketch
+    Takes in an image from a URL, and doodle-fyes it. Any previous image at image.png will be erased,
+    and it will attempt to center the image a bit, so it at least won't be in the top left corner.
+
+    Notes: - QuickDraw doesn't have doodles representing people, so when Azure detects a "Person",
+             I convert it to "smiley face" in bad_sketch and draw a shirt underneath.
+
+           - In case Azure's detection is too specific, and QuickDraw doesn't recognize it, I feed
+             in the object's "Parents", to get more general terms that Quick might recognize. For
+             example, QuickDraw won't recognize a "stationwagon", but it will recognize its parent, a "car".
     """
     if input_path != "":
         azure_dict = image_recognizer(input_path)
