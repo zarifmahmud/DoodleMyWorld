@@ -1,5 +1,5 @@
 ## Doodle My World
-This is the project I made for Hack the 6ix, that won "Most Fun Hack"! You can check out the writeup for it here: https://devpost.com/software/doodle-my-world.
+This is the project I made for Hack the 6ix, that won "Most Fun Hack"! You can check out the writeup and see a video demo for it here: https://devpost.com/software/doodle-my-world.
 
 ## For Personal Use
 If you want to use this on your own computer, the only extra thing you will need to do is to make a file called "security.py", and add your personal keys to Azure's speech and vision resources.
