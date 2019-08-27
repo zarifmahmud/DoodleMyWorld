@@ -1,9 +1,10 @@
-This is the project I made for Hack the 6ix called "Doodle My World"! You can check out the writeup for it here: https://devpost.com/software/doodle-my-world.
+## Doodle My World
+This is the project I made for Hack the 6ix, that won "Most Fun Hack"! You can check out the writeup for it here: https://devpost.com/software/doodle-my-world.
 
-For Personal Use:
+## For Personal Use
 If you want to use this on your own computer, the only extra thing you will need to do is to make a file called "security.py", and add your personal keys to Azure's speech and vision resources.
 
-Guide to Voice Commands:
+## Guide to Voice Commands
 Imagine that the image is split into an 8x6 grid (so each of these 48 squares is 250 x 300 pixels large).
 You can specify a particular square for a doodle to go, or fill an entire row or column with doodles.
 
