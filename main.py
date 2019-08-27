@@ -2,24 +2,14 @@
 TODO: Add drawn on grid, undo feature, spot erase feature.
 Program that
 """
-from security import *
+import security
 import requests
 from quickdraw import QuickDrawData
 from PIL import Image
 import azure.cognitiveservices.speech as speechsdk
-import sys
 
 
-def thesaurize(word: str):
-    """
-    Returns words related to the word we have
-    """
-    url = "https://www.dictionaryapi.com/api/v3/references/ithesaurus/json/" + word + "?key=" + ithesaurus_key
-    r = requests.get(url)
-    json = r.json()
-    #return json
-    #return json[0]["def"][0]["sseq"][0][0][1]["rel_list"]
-    return json
+
 
 
 def image_recognizer(filepath: str):
@@ -30,7 +20,7 @@ def image_recognizer(filepath: str):
     vision_base_url = "https://eastus.api.cognitive.microsoft.com/vision/v2.0/"
     analyze_url = vision_base_url + "analyze"
     image_url = filepath
-    headers = {'Ocp-Apim-Subscription-Key': azure_key}
+    headers = {'Ocp-Apim-Subscription-Key': security.azure_key}
     params = {'visualFeatures': 'Categories,Description,Objects'}
     data = {'url': image_url}
     response = requests.post(analyze_url, headers=headers,
@@ -53,7 +43,7 @@ def speech_recognize():
     - "Noun" on x dot y, to place a noun at that coordinate
     - Noun across/down point x/y, to fill a row or column
     """
-    speech_key, service_region = azure_speech_key, "eastus"
+    speech_key, service_region = security.azure_speech_key, "eastus"
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
 
     # Creates a recognizer with the given settings
@@ -181,42 +171,29 @@ def speech_to_doodle(to_draw = ""):
 
 def speech_correction(noun):
     """
-    Corrects common misheard words
+    Corrects common misheard words. If you have any, add it to the dictionary!
     """
-    if noun == "son":
-        return "sun"
-    elif noun == "shirt":
-        return "t-shirt"
-    elif noun == "smiley":
-        return "smiley face"
-    elif noun == "year":
-        return "ear"
-    elif noun == "frying":
-        return "frying pan"
-    elif noun == "free":
-        return "tree"
-    elif noun == "suck":
-        return "sock"
-    else:
-        return noun
+    misheard_dict = {"son": "sun", "shirt": "t-shirt", "smiley": "smiley face", "year": "ear",
+                     "frying": "frying pan", "free": "tree", "suck": "sock"}
+    return misheard_dict[noun] if noun in misheard_dict else noun
 
-def add_to_drawing(word: str, xytuple):
+
+def add_to_drawing(word: str, xytuple: tuple):
     """
     This is what puts images into a communal drawing
     """
-    # img = Image.new('RGB', (800, 1280), (255, 255, 255))
-    # img.save("image.png", "PNG")
     filepath = bad_sketch(word)
     img = Image.open(filepath, 'r')
-    img_w, img_h = img.size
     #background = Image.new('RGBA', (2600, 2000), (255, 255, 255, 255))
     background = Image.open("image.png", "r")
-    bg_w, bg_h = background.size
-    #offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
     background.paste(img, xytuple)
     background.save('image.png', "PNG")
 
+
 def erase_image(image_name):
+    """
+    Replaces image with a blank image.
+    """
     background = Image.new('RGBA', (2000, 2000), (255, 255, 255, 255))
     background.save(image_name, "PNG")
 
@@ -290,6 +267,7 @@ if __name__ == '__main__':
     #speech_to_doodle("blach")
  # img = Image.new('RGB', (50, 50), (255, 255, 255))
  # img.save("blank.png", "PNG")
+    pass
 
 """
 [{'name': 'plant_tree', 'score': 0.984375}]
