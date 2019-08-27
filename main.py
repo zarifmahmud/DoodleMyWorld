@@ -41,7 +41,7 @@ class App(QWidget):
         self.resize(pixmap.width(), pixmap.height())
         button = QPushButton('Voice Command', self)
         button.setToolTip('This is an example button')
-        button.move(1600, 800)
+        button.move(1600, 600)
         button.clicked.connect(self.on_click)
         self.textbox = QLineEdit(self)
         self.textbox.move(1600, 300)
@@ -57,7 +57,7 @@ class App(QWidget):
         button3.clicked.connect(self.refresh)
 
         button4 = QPushButton('Redo Command', self)
-        button4.move(1600, 850)
+        button4.move(1600, 650)
         button4.clicked.connect(self.redo_voice)
 
         self.label.setScaledContents(True)
@@ -83,9 +83,10 @@ class App(QWidget):
         self.label.setPixmap(pixmap)
 
     def redo_voice(self):
-        speech_to_doodle(self.voice_save)
-        pixmap = QPixmap('image.png')
-        self.label.setPixmap(pixmap)
+        if self.voice_save != "":
+            speech_to_doodle(self.voice_save)
+            pixmap = QPixmap('image.png')
+            self.label.setPixmap(pixmap)
 
 
 
@@ -204,16 +205,6 @@ def bad_sketch(keyword: str):
         return "blank.png"
 
 
-def bad_sketch_related(keyword: str):
-    """
-    Input a noun you want a sketch of, and if Google Quickdraw finds it,
-    it will output a drawing.
-    If no drawing found, will feed the word through a thesaurus and see if
-    Quickdraw
-    """
-    pass
-
-
 def pic_to_doodle(input_path: str):
     """
     The main function, put in an image, and it outputs a sketch
@@ -238,11 +229,6 @@ def pic_to_doodle(input_path: str):
                     if bad_sketch(parent) is not None:
                         add_to_drawing(parent, (xcor, ycor))
 
-def speech_to_info(speech):
-    """
-    Parses speech for keywords to convert
-    """
-    pass
 
 def speech_to_doodle(to_draw = ""):
     """
@@ -289,6 +275,8 @@ def speech_correction(noun):
         return "frying pan"
     elif noun == "free":
         return "tree"
+    elif noun == "suck":
+        return "sock"
     else:
         return noun
 
