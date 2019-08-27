@@ -1,4 +1,4 @@
-from main import *
+from draw import *
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QLabel, QApplication
 from PyQt5.QtGui import QPixmap
 import sys

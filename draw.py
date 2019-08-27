@@ -9,24 +9,20 @@ from PIL import Image
 import azure.cognitiveservices.speech as speechsdk
 
 
-
-
-
-def image_recognizer(filepath: str):
+def image_recognizer(image_url: str):
     """
-    Takes in an image and outputs objects detected by Microsoft Azure
+    Takes in an image from a url and outputs objects detected by Microsoft Azure
     """
 
     vision_base_url = "https://eastus.api.cognitive.microsoft.com/vision/v2.0/"
     analyze_url = vision_base_url + "analyze"
-    image_url = filepath
     headers = {'Ocp-Apim-Subscription-Key': security.azure_key}
     params = {'visualFeatures': 'Categories,Description,Objects'}
     data = {'url': image_url}
-    response = requests.post(analyze_url, headers=headers,
-                             params=params, json=data)
+    response = requests.post(analyze_url, headers=headers, params=params, json=data)
     response.raise_for_status()
     analysis = response.json()
+
     output_dict = {}
     output_dict["categories"] = analysis["categories"]
     output_dict["objects"] = analysis["objects"]
@@ -36,12 +32,13 @@ def image_recognizer(filepath: str):
     print(analysis["description"])
     return output_dict
 
+
 def speech_recognize():
     """
     Keywords:
     - Erase, to erase the drawing
-    - "Noun" on x dot y, to place a noun at that coordinate
-    - Noun across/down point x/y, to fill a row or column
+    - "Noun" on x dot y, to place a noun at that coordinate. i.e. "Tree at 3.4."
+    - Noun across/down point x/y, to fill a row or column i.e. "Mountain across .5."
     """
     speech_key, service_region = security.azure_speech_key, "eastus"
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
@@ -55,38 +52,8 @@ def speech_recognize():
     # Checks result.
     if result.reason == speechsdk.ResultReason.RecognizedSpeech:
         print("Recognized: {}".format(result.text))
-        said = result.text
-        if said[:-1] == "Erase":
-            return ["Erase", (-1, -1), 0]
+        return result.text
 
-        # Get in form of number dot number
-        potential = (said[-4], said[-2])
-        said = said.strip()
-        noun = said.split()[0]
-        print(said)
-        print(result.text[-2])
-        if result.text[-2].isdigit():
-            digit = int(result.text[-2])
-            print(digit + 2)
-            if "row" in said or "road" in said or "across" in said:
-                return [noun, (0, digit), 1]
-            elif "column" in said or "down" in said:
-                return [noun, (digit, 0), 2]
-
-        if potential[0].isdigit() and potential[1].isdigit():
-            coordinate = (int(potential[0]), int(potential[1]))
-            output = [noun, coordinate, 0]
-            print(coordinate)
-            # Check if filling row or column
-            # if "row" in said or "road" in said or "across" in said:
-            #     output[1] = result.text[:-2]
-            #     output[2] = 1
-            # elif "column" in said or "down" in said:
-            #     output[1] = result.text[:-2]
-            #     output[2] = 2
-            return output
-        else:
-            return None
     elif result.reason == speechsdk.ResultReason.NoMatch:
         print("No speech could be recognized: {}".format(result.no_match_details))
     elif result.reason == speechsdk.ResultReason.Canceled:
@@ -94,18 +61,50 @@ def speech_recognize():
         print("Speech Recognition canceled: {}".format(cancellation_details.reason))
         if cancellation_details.reason == speechsdk.CancellationReason.Error:
             print("Error details: {}".format(cancellation_details.error_details))
+    return ""
 
 
-def bad_sketch(keyword: str):
+def keyword_finder(speech: str) -> list:
+    """
+    Attempts to find command phrases in the speech transcript.
+    ex:
+    >>> keyword_finder("Nose at 6.3.")
+    >>> ["Nose", (6,3), 0]
+    """
+    said = speech
+    if said[:-1] == "Erase":
+        return ["Erase", (-1, -1), 0]
+
+    # Get in form of number dot number
+    potential = (said[-4], said[-2])
+    said = said.strip()
+    noun = said.split()[0]
+    print(said)
+    if speech[-2].isdigit():
+        digit = int(speech[-2])
+        print(digit + 2)
+        if "row" in said or "road" in said or "across" in said:
+            return [noun, (0, digit), 1]
+        elif "column" in said or "down" in said:
+            return [noun, (digit, 0), 2]
+
+    if potential[0].isdigit() and potential[1].isdigit():
+        coordinate = (int(potential[0]), int(potential[1]))
+        output = [noun, coordinate, 0]
+        print(coordinate)
+        return output
+
+
+def bad_sketch(keyword: str) -> str:
     """
     Input a noun you want a sketch of, and if Google Quickdraw finds it,
-    it will output a drawing
+    it will save a random doodle of it to keyword.gif, and return the filepath.
     """
-    if keyword == "person":
-        keyword = "smiley face"
     qd = QuickDrawData()
     if keyword is not None:
         keyword = keyword.lower()
+        if keyword == "person":
+            keyword = "smiley face"
     try:
         key = qd.get_drawing(keyword)
         filepath = "keyword.gif"
@@ -140,7 +139,7 @@ def pic_to_doodle(input_path: str):
                         add_to_drawing(parent, (xcor, ycor))
 
 
-def speech_to_doodle(to_draw = ""):
+def speech_to_doodle(to_draw=""):
     """
     Speak to draw, using Azure voice recognition
     You can use voice commands to erase the image,
@@ -148,9 +147,9 @@ def speech_to_doodle(to_draw = ""):
      or fill a row or column with something
     """
     if to_draw == "":
-        to_draw = speech_recognize()
+        to_draw = keyword_finder(speech_recognize())
+
     if to_draw is not None:
-        #print("bro")
         noun = to_draw[0].lower()
         noun = speech_correction(noun)
         xcor = to_draw[1][0]
@@ -174,7 +173,7 @@ def speech_correction(noun):
     Corrects common misheard words. If you have any, add it to the dictionary!
     """
     misheard_dict = {"son": "sun", "shirt": "t-shirt", "smiley": "smiley face", "year": "ear",
-                     "frying": "frying pan", "free": "tree", "suck": "sock"}
+                     "frying": "frying pan", "free": "tree", "suck": "sock", "nodes": "nose"}
     return misheard_dict[noun] if noun in misheard_dict else noun
 
 
@@ -196,20 +195,6 @@ def erase_image(image_name):
     """
     background = Image.new('RGBA', (2000, 2000), (255, 255, 255, 255))
     background.save(image_name, "PNG")
-
-# def shift_to_drawing(word: str, xcor, ycor):
-#     # img = Image.new('RGB', (800, 1280), (255, 255, 255))
-#     # img.save("image.png", "PNG")
-#     #erase_image("gridcheck.png")
-#     bad_sketch(word)
-#     img = Image.open('keyword.gif', 'r')
-#     img_w, img_h = img.size
-#     #background = Image.new('RGBA', (2200, 2000), (255, 255, 255, 255))
-#     background = Image.open("gridcheck.png", "r")
-#     bg_w, bg_h = background.size
-#     #offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
-#     background.paste(img, (xcor, ycor))
-#     background.save('gridcheck.png', "PNG")
 
 
 def grid_to_pixel(x, y):
@@ -248,7 +233,9 @@ def grid_fill(row: bool, coordinate, word: str):
             add_to_drawing(word, pixel_coor)
             num -= 1
 
+
 if __name__ == '__main__':
+
     #image_recognizer("bob")
     #print(thesaurize("plant"))
     #bad_sketch("smiley face")
