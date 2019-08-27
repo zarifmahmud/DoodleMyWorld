@@ -1,13 +1,16 @@
-from draw import *
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QLabel, QApplication
 from PyQt5.QtGui import QPixmap
+from voice_doodle import speech_to_doodle
+from photo_doodle import pic_to_doodle
 import sys
+
 
 
 class App(QWidget):
     """
     GUI for Doodle My World
     """
+
 
     def __init__(self):
         super().__init__()
@@ -20,6 +23,7 @@ class App(QWidget):
         self.voice_save = ""
         self.label = QLabel(self)
         self.textbox = QLineEdit(self)
+        self.image = "image.png"
         self.init_ui()
 
     def init_ui(self):
@@ -33,7 +37,7 @@ class App(QWidget):
 
         # Create widget
 
-        pixmap = QPixmap('image.png')
+        pixmap = QPixmap(self.image)
         self.label.setPixmap(pixmap)
         self.label.resize(1500, 1000)
         self.resize(pixmap.width(), pixmap.height())
@@ -63,7 +67,7 @@ class App(QWidget):
         """
         Refreshes display with most current version of image.png.
         """
-        pixmap = QPixmap('image.png')
+        pixmap = QPixmap(self.image)
         self.label.setPixmap(pixmap)
 
     def voice_command(self):
