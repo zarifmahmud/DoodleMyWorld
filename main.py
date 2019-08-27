@@ -1,93 +1,13 @@
 """
-TODO: Add thesaurus functionality, speech functionality, grid drawing functionality
-More importantly, add GUI before all this.
-grid system for drawings
-refresh feature
+TODO: Add drawn on grid, undo feature, spot erase feature.
+Program that
 """
 from security import *
 import requests
 from quickdraw import QuickDrawData
 from PIL import Image
 import azure.cognitiveservices.speech as speechsdk
-from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QLabel, QApplication
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import QTimer
 import sys
-
-
-class App(QWidget):
-
-    def __init__(self):
-        super().__init__()
-        self.title = 'Title'
-        self.left = 10
-        self.top = 10
-        self.width = 60
-        self.height = 80
-        self.text = "https://ichef.bbci.co.uk/news/660/cpsprodpb/E9DF/production/_96317895_gettyimages-164067218.jpg"
-        self.voice_save = ""
-        self.initUI()
-
-
-    def initUI(self):
-        self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
-
-        # Create widget
-        self.label = QLabel(self)
-        pixmap = QPixmap('image.png')
-        self.label.setPixmap(pixmap)
-        self.label.resize(1500, 1000)
-        self.resize(pixmap.width(), pixmap.height())
-        button = QPushButton('Voice Command', self)
-        button.setToolTip('This is an example button')
-        button.move(1600, 600)
-        button.clicked.connect(self.on_click)
-        self.textbox = QLineEdit(self)
-        self.textbox.move(1600, 300)
-        self.textbox.resize(280, 40)
-
-        # Create a button in the window
-        button2 = QPushButton('Upload image from link', self)
-        button2.move(1600, 350)
-        button2.clicked.connect(self.on_click2)
-
-        button3 = QPushButton('Refresh Image!', self)
-        button3.move(1600, 400)
-        button3.clicked.connect(self.refresh)
-
-        button4 = QPushButton('Redo Command', self)
-        button4.move(1600, 650)
-        button4.clicked.connect(self.redo_voice)
-
-        self.label.setScaledContents(True)
-        self.show()
-
-    def on_click(self):
-        self.voice_save = speech_to_doodle("")
-        pixmap = QPixmap('image.png')
-        self.label.setPixmap(pixmap)
-
-
-    def on_click2(self):
-        textboxValue = self.textbox.text()
-        self.text = textboxValue
-        self.textbox.setText("")
-        pic_to_doodle(textboxValue)
-        pixmap = QPixmap('image.png')
-        self.label.setPixmap(pixmap)
-
-    def refresh(self):
-        pic_to_doodle(self.text)
-        pixmap = QPixmap('image.png')
-        self.label.setPixmap(pixmap)
-
-    def redo_voice(self):
-        if self.voice_save != "":
-            speech_to_doodle(self.voice_save)
-            pixmap = QPixmap('image.png')
-            self.label.setPixmap(pixmap)
-
 
 
 def thesaurize(word: str):
@@ -368,9 +288,6 @@ if __name__ == '__main__':
     #     num += 1
     #grid_fill(False, 4, "mountain")
     #speech_to_doodle("blach")
-    app = QApplication(sys.argv)
-    ex = App()
-    sys.exit(app.exec_())
  # img = Image.new('RGB', (50, 50), (255, 255, 255))
  # img.save("blank.png", "PNG")
 
